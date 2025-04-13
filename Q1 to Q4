@@ -1,0 +1,381 @@
+#Q 1
+
+import pandas as pd
+import numpy as np
+mu = np.array([0.05, 0.07, 0.15, 0.22])
+sigma = np.array([0.07, 0.28, 0.25, 0.31])
+corr = np.array([[1, 0.4, 0.3, 0.3],[0.4, 1, 0.27, 0.42],[0.3, 0.27, 1, 0.5],[0.3, 0.42, 0.5, 1]])
+# now we compute the corvaiance
+cov_matrix = np.outer(sigma, sigma) * corr
+cov_matrix
+second: find $\sum^-^1$
+
+third: got the $min\frac{1}{2}w'\sum w$
+
+cuz $w_0=1-w'1$ and the function been given as $w'1=1$ so the $w_0=0$
+
+the return of portfilo as $\mu_\pi=w'\mu +r(1-w'1)$ and cuz the $w_0=0$ so the $\mu_\pi=w'\mu$
+
+As we solve the problem, we need the variance of p $\sigma^2_p=w^T\sum w$. Then we use the Lagrangin at the origonal function for $L(w,\lambda) =\frac{1}{2}w'\sum w -\lambda(w'1-1)$ then we take the first order condition for w:
+
+$w=\lambda \sum^-^11$ as the function we have, we are solving $lambda$ for $w*$.cuz of the function given on the test $w'1=1$ we substitute w in it with $\lambda$ and get $\lambda \sum^-^11=1$. 
+
+then solve the $\lambda=\frac{1}{1^T\sum^-^11}$
+
+then substutide $\lambda$ into w, we got the $w=\frac{\sum^-^11}{1^T \sum^-^11}$
+import pandas as pd 
+import numpy as np
+# connectiong with the upper code find the covarance invers here 
+cov_inv = np.linalg.inv(cov_matrix)
+#print out the cov_inv
+print(cov_inv)
+#cuz weight totla equal to 1 so got a one vactor
+one=np.ones(len(mu))
+#compute the weight of MVP
+w= cov_inv @ one/(one.T @ cov_inv @ one)
+print('the weight of MVP as')
+print(w)
+#Q2
+import numpy as np
+
+# the origional matrix 
+corr = np.array([
+    [1, 0.4, 0.3, 0.3],
+    [0.4, 1, 0.27, 0.42],
+    [0.3, 0.27, 1, 0.5],
+    [0.3, 0.42, 0.5, 1]
+])
+
+# set up levels
+levels = [1, 1.3, 1.8]
+
+# def the function use for different levels and set up 0.99 confidence 
+def stress_corr_matrix(corr, stress_level):
+    stressed_corr = corr.copy()
+    for i in range(len(corr)):
+        for j in range(len(corr)):
+            if i != j:
+                stressed_corr[i, j] = min(corr[i, j] * stress_level, 0.99)
+    return stressed_corr
+
+stressed_corrs = [stress_corr_matrix(corr, level) for level in levels]
+for idx, stressed_corr in enumerate(stressed_corrs):
+    print(f"level (x{levels[idx]}):\n{stressed_corr}\n")
+import numpy as np
+import matplotlib.pyplot as plt
+
+mu = np.array([0.05, 0.07, 0.15, 0.22])
+sigma = np.array([0.07, 0.28, 0.25, 0.31])
+corr = np.array([
+    [1, 0.4, 0.3, 0.3],
+    [0.4, 1, 0.27, 0.42],
+    [0.3, 0.27, 1, 0.5],
+    [0.3, 0.42, 0.5, 1]
+])
+
+# ompute covariance matrix
+def compute_cov(sigma, corr):
+    return np.diag(sigma) @ corr @ np.diag(sigma)
+
+# def the function to compute optimal weights as w*
+def compute_weights(mu, sigma, corr, m):
+    n = len(mu)
+    ones = np.ones(n)
+    Sigma = compute_cov(sigma, corr)
+    Sigma_inv = np.linalg.inv(Sigma)
+    A = mu @ Sigma_inv @ mu
+    B = ones @ Sigma_inv @ mu
+    C = ones @ Sigma_inv @ ones
+    D = A * C - B ** 2
+    lambda_1 = (C * m - B) / D
+    lambda_2 = (A - B * m) / D
+    w_star = Sigma_inv @ (mu * lambda_1 + ones * lambda_2)
+    return w_star
+
+# def function to compute portfolio risk
+def compute_portfolio_risk(w_star, sigma, corr):
+    Sigma = compute_cov(sigma, corr)
+    portfolio_variance = w_star.T @ Sigma @ w_star
+    portfolio_risk = np.sqrt(portfolio_variance)
+    return portfolio_risk
+
+# Given target return
+m = 0.07
+
+# Compute results for different correlation levels
+correlation_levels = [1, 1.3, 1.8]
+results = []
+
+for level in correlation_levels:
+    stressed_corr = corr * level
+    np.fill_diagonal(stressed_corr, 1)
+    
+    w_star = compute_weights(mu, sigma, stressed_corr, m)
+    portfolio_risk = compute_portfolio_risk(w_star, sigma, stressed_corr)
+    
+    results.append((w_star, portfolio_risk))
+
+# Display the results
+for i, level in enumerate(levels):
+    w_star, portfolio_risk = results[i]
+    print(f"level: {level}")
+    print(f"weights: {w_star}")
+    print(f"risk: {portfolio_risk}\n")
+
+#Q3
+import numpy as np
+from scipy.stats import norm
+annual_SR = 0.53
+days_per_year = 252
+months_per_year = 12
+quarters_per_year = 4
+daily_SR = annual_SR / np.sqrt(days_per_year)
+monthly_SR = annual_SR / np.sqrt(months_per_year)
+quarterly_SR = annual_SR / np.sqrt(quarters_per_year)
+print(daily_SR,monthly_SR,quarterly_SR)
+daily_loss_prob = norm.cdf(-daily_SR)
+monthly_loss_prob = norm.cdf(-monthly_SR)
+quarterly_loss_prob = norm.cdf(-quarterly_SR)
+annual_loss_prob = norm.cdf(-annual_SR)
+# Print results
+print(f"Daily SR: {daily_SR:.4f}, Loss Probability: {daily_loss_prob:.4f}")
+print(f"Monthly SR: {monthly_SR:.4f}, Loss Probability: {monthly_loss_prob:.4f}")
+print(f"Quarterly SR: {quarterly_SR:.4f}, Loss Probability: {quarterly_loss_prob:.4f}")
+print(f"Annual SR: {annual_SR:.4f}, Loss Probability: {annual_loss_prob:.4f}")
+#Q4
+import pandas as pd
+import numpy as np
+#import the data to python from excel been given in protal
+nas=pd.read_csv('/Users/15668/Desktop/nasdaq100_2024.csv', parse_dates=['Date'])
+sp500=pd.read_csv('/Users/15668/Desktop/sp500_2024(1).csv', parse_dates=['Date'])
+from scipy.stats import norm
+#convert from date
+nas['Date']=pd.to_datetime(nas['Date'])
+sp500['Date']=pd.to_datetime(sp500['Date'])
+# from the above step we can do the return for now
+nas['Daily Return']=nas['Closing Price'].pct_change()
+sp500['Daily Return']=sp500['Closing Price'].pct_change()
+#through daily return find the 21 days window sd 
+nas['sd']=nas['Daily Return'].rolling(window=21).std()
+sp500['sd']=sp500['Daily Return'].rolling(window=21).std()
+# Remove the initial days with NaN values
+nas = nas.dropna(subset=['sd'])
+sp500= sp500.dropna(subset=['sd'])
+#find the VaR from sd for every10 days 
+factor = norm.ppf(0.01)
+nas['VaR_10D'] = factor * nas['sd'] * np.sqrt(10)
+sp500['VaR_10D'] = factor * sp500['sd'] * np.sqrt(10)
+#find the 10 day froward return for compare 
+nas['10D Return']=nas['Closing Price'].shift(-10)/nas['Closing Price']-1
+sp500['10D Return'] = sp500['Closing Price'].shift(-10) / sp500['Closing Price'] - 1
+# Identify VaR breaches
+nas['VaR Breach'] = nas['10D Return'] < nas['VaR_10D']
+sp500['VaR Breach'] = sp500['10D Return'] < sp500['VaR_10D']
+# Count the sum and percentage of VaR breaches
+nas_breaches = nas['VaR Breach'].sum()
+sp500_breaches = sp500['VaR Breach'].sum()
+
+nas_breaches_percent = nas_breaches / len(nas) * 100
+sp500_breaches_percent = sp500_breaches / len(sp500) * 100
+
+print(f"NASDAQ VaR Breaches: {nas_breaches} ({nas_breaches_percent:.2f}%)")
+print(f"S&P 500 VaR Breaches: {sp500_breaches} ({sp500_breaches_percent:.2f}%)")
+import matplotlib.pyplot as plt
+# Plot NASDAQ first
+plt.figure(figsize=(14, 7))
+plt.plot(nas['Date'], nas['10D Return'], label='NASDAQ 10D Return')
+plt.plot(nas['Date'], nas['VaR_10D'], label='NASDAQ VaR 10D', linestyle='--')
+plt.scatter(nas[nas['VaR Breach']]['Date'], nas[nas['VaR Breach']]['10D Return'], color='red', label='NASDAQ VaR Breach')
+plt.xlabel('Date')
+plt.ylabel('Returns')
+plt.title('NASDAQ VaR Breaches')
+plt.legend()
+plt.show()
+
+# Plot sp 500
+plt.figure(figsize=(14, 7))
+plt.plot(sp500['Date'], sp500['10D Return'], label='S&P 500 10D Return')
+plt.plot(sp500['Date'], sp500['VaR_10D'], label='S&P 500 VaR 10D', linestyle='--')
+plt.scatter(sp500[sp500['VaR Breach']]['Date'], sp500[sp500['VaR Breach']]['10D Return'], color='red', label='S&P 500 VaR Breach')
+plt.xlabel('Date')
+plt.ylabel('Returns')
+plt.title('sp 500 VaR Breaches')
+plt.legend()
+plt.show()
+nas_breaches=nas[nas['VaR Breach']][['Date', 'Closing Price', 'Daily Return', 'VaR_10D', '10D Return']]
+sp500_breaches = sp500[sp500['VaR Breach']][['Date', 'Closing Price', 'Daily Return', 'VaR_10D', '10D Return']]
+
+# Save to CSV files
+nas_breaches.to_csv('nasdaq_breaches.csv', index=True)
+sp500_breaches.to_csv('sp500_breaches.csv', index=True)
+
+print("NASDAQ VaR Breaches:")
+print(nas_breaches.head())
+
+print("\nS&P 500 VaR Breaches:")
+print(sp500_breaches.head())
+import pandas as pd 
+import numpy as np
+from scipy import stats
+covid_start = '2020-02-01'
+covid_end = '2020-03-31'
+nasdaq_covid = nas[(nas['Date'] >= covid_start) & (nas['Date'] <= covid_end)]
+sp500_covid = sp500[(sp500['Date'] >= covid_start) & (sp500['Date'] <= covid_end)]
+
+# Calculate daily returns
+nasdaq_covid['Return'] = nasdaq_covid['Closing Price'].pct_change().dropna()
+sp500_covid['Return'] = sp500_covid['Closing Price'].pct_change().dropna()
+
+# Check for non-numeric values and missing data
+nasdaq_covid = nasdaq_covid[np.isfinite(nasdaq_covid['Return'])]
+sp500_covid = sp500_covid[np.isfinite(sp500_covid['Return'])]
+
+# Perform the t-test
+t_stat, p_value = stats.ttest_ind(nasdaq_covid['Return'], sp500_covid['Return'], equal_var=False)
+
+# Print results
+t_test_results = {
+    "Statistic": t_stat,
+    "P-Value": p_value
+}
+
+t_test_results_df = pd.DataFrame([t_test_results])
+t_stat, p_value
+import pandas as pd
+import numpy as np
+nasdaq_data = pd.read_csv('/Users/15668/Desktop/nasdaq100_2024.csv', parse_dates=['Date'])
+sp500_data = pd.read_csv('/Users/15668/Desktop/sp500_2024(1).csv', parse_dates=['Date'])
+#we have to do the data cleaning before do the all stuffs 
+nasdaq_data=nasdaq_data.dropna()
+sp500_data=sp500_data.dropna()
+nasdaq_data['Date'] = pd.to_datetime(nasdaq_data['Date'])
+sp500_data['Date']=pd.to_datetime(sp500_data['Date'])
+nasdaq_data['Returns']=np.log(nasdaq_data['Closing Price']/nasdaq_data['Closing Price'].shift(1))
+sp500_data['Returns']=np.log(sp500_data['Closing Price']/ sp500_data['Closing Price'].shift(1))
+nasdaq_returns = nasdaq_data['Returns']
+sp500_returns = sp500_data['Returns']
+# we set the lamdba and set the serise for all the return varience from 1 
+lambda1=0.72
+nasdaq_var=nasdaq_returns.var()
+sp500_var=sp500_returns.var()
+ewma_nasdaq_var = pd.Series(index=nasdaq_returns.index)
+ewma_sp500_var = pd.Series(index=sp500_returns.index)
+ewma_nasdaq_var.iloc[1] = nasdaq_var
+ewma_sp500_var.iloc[1] = sp500_var
+# Calculate EWMA variance
+for t in range(2, len(nasdaq_returns)):
+    ewma_nasdaq_var.iloc[t] = lambda1 * ewma_nasdaq_var.iloc[t-1] + (1 - lambda1) * nasdaq_returns.iloc[t-1]**2
+
+for t in range(2, len(sp500_returns)):
+    ewma_sp500_var.iloc[t] = lambda1 * ewma_sp500_var.iloc[t-1] + (1 - lambda1) * sp500_returns.iloc[t-1]**2
+ewma_volatility_nasdaq = np.sqrt(ewma_nasdaq_var)
+ewma_volatility_sp500 = np.sqrt(ewma_sp500_var)
+# Factor for 99% VaR with normal distribution
+factor = 2.33
+
+# Calculate 10-day VaR
+VaR_10D_nasdaq = factor * ewma_volatility_nasdaq * np.sqrt(10)
+VaR_10D_sp500 = factor * ewma_volatility_sp500 * np.sqrt(10)
+
+# Compute 10-day realized returns
+realized_10D_return_nasdaq = nasdaq_returns.rolling(window=10).sum().shift(-10)
+realized_10D_return_sp500 = sp500_returns.rolling(window=10).sum().shift(-10)
+
+# Identify VaR breaches
+breaches_nasdaq = realized_10D_return_nasdaq < -VaR_10D_nasdaq
+breaches_sp500 = realized_10D_return_sp500 < -VaR_10D_sp500
+
+# put them into list
+nasdaq_data['VaR_10D_nasdaq'] = factor * ewma_volatility_nasdaq * np.sqrt(10)
+sp500_data['VaR_10D_sp500'] = factor * ewma_volatility_sp500 * np.sqrt(10)
+
+nasdaq_data['realized_10D_return_nasdaq'] = nasdaq_returns.rolling(window=10).sum().shift(-10)
+sp500_data['realized_10D_return_sp500'] = sp500_returns.rolling(window=10).sum().shift(-10)
+
+nasdaq_data['breaches_nasdaq'] = realized_10D_return_nasdaq < -VaR_10D_nasdaq
+sp500_data['breaches_sp500'] = realized_10D_return_sp500 < -VaR_10D_sp500
+
+# Count and percentage of breaches
+count_breaches_nasdaq = breaches_nasdaq.sum()
+count_breaches_sp500 = breaches_sp500.sum()
+
+percentage_breaches_nasdaq = count_breaches_nasdaq / len(breaches_nasdaq) * 100
+percentage_breaches_sp500 = count_breaches_sp500 / len(breaches_sp500) * 100
+
+(count_breaches_nasdaq, percentage_breaches_nasdaq), (count_breaches_sp500, percentage_breaches_sp500)
+nasdaq_data = pd.read_csv('/Users/15668/Desktop/nasdaq100_2024.csv', parse_dates=['Date'])
+sp500_data = pd.read_csv('/Users/15668/Desktop/sp500_2024(1).csv', parse_dates=['Date'])
+#we have to do the data cleaning before do the all stuffs 
+nasdaq_data=nasdaq_data.dropna()
+sp500_data=sp500_data.dropna()
+nasdaq_data['Date'] = pd.to_datetime(nasdaq_data['Date'])
+sp500_data['Date']=pd.to_datetime(sp500_data['Date'])
+nasdaq_data['Returns']=np.log(nasdaq_data['Closing Price']/nasdaq_data['Closing Price'].shift(1))
+sp500_data['Returns']=np.log(sp500_data['Closing Price']/ sp500_data['Closing Price'].shift(1))
+nasdaq_returns = nasdaq_data['Returns']
+sp500_returns = sp500_data['Returns']
+# we set the lamdba and set the serise for all the return varience from 1 
+lambda1=0.72
+nasdaq_var=nasdaq_returns.var()
+sp500_var=sp500_returns.var()
+ewma_nasdaq_var = pd.Series(index=nasdaq_returns.index)
+ewma_sp500_var = pd.Series(index=sp500_returns.index)
+ewma_nasdaq_var.iloc[1] = nasdaq_var
+ewma_sp500_var.iloc[1] = sp500_var
+# Calculate EWMA variance
+for t in range(2, len(nasdaq_returns)):
+    ewma_nasdaq_var.iloc[t] = lambda1 * ewma_nasdaq_var.iloc[t-1] + (1 - lambda1) * nasdaq_returns.iloc[t-1]**2
+
+for t in range(2, len(sp500_returns)):
+    ewma_sp500_var.iloc[t] = lambda1 * ewma_sp500_var.iloc[t-1] + (1 - lambda1) * sp500_returns.iloc[t-1]**2
+    
+ewma_volatility_nasdaq = np.sqrt(ewma_nasdaq_var)
+ewma_volatility_sp500 = np.sqrt(ewma_sp500_var)
+
+# Factor for 99% VaR with normal distribution
+factor = 2.33
+
+# Calculate 10-day VaR
+nasdaq_data['VaR_10D_nasdaq'] = factor * ewma_volatility_nasdaq * np.sqrt(10)
+sp500_data['VaR_10D_sp500'] = factor * ewma_volatility_sp500 * np.sqrt(10)
+
+# Compute 10-day realized returns
+nasdaq_data['realized_10D_return_nasdaq'] = nasdaq_returns.rolling(window=10).sum().shift(-10)
+sp500_data['realized_10D_return_sp500'] = sp500_returns.rolling(window=10).sum().shift(-10)
+
+# Identify VaR breaches
+nasdaq_data['breaches_nasdaq'] = realized_10D_return_nasdaq < -VaR_10D_nasdaq
+sp500_data['breaches_sp500'] = realized_10D_return_sp500 < -VaR_10D_sp500
+
+# Count and percentage of breaches
+count_breaches_nasdaq = breaches_nasdaq.sum()
+count_breaches_sp500 = breaches_sp500.sum()
+
+percentage_breaches_nasdaq = count_breaches_nasdaq / len(breaches_nasdaq) * 100
+percentage_breaches_sp500 = count_breaches_sp500 / len(breaches_sp500) * 100
+
+(count_breaches_nasdaq, percentage_breaches_nasdaq), (count_breaches_sp500, percentage_breaches_sp500)
+import matplotlib.pyplot as plt
+plt.figure(figsize=(14, 7))
+
+plt.subplot(2, 1, 1)
+plt.plot(nasdaq_data['Date'], nasdaq_data['Returns'], label='Returns')
+plt.plot(nasdaq_data['Date'], nasdaq_data['VaR_10D_nasdaq'], label='VaR_10D_nasdaq')
+plt.scatter(nasdaq_data['Date'], nasdaq_data['realized_10D_return_nasdaq'], c=nasdaq_data['breaches_nasdaq'],  label='Breach')
+plt.title('NASDAQ-100 LogReturn and VaR_10D with Breaches')
+plt.legend()
+
+plt.subplot(2, 1, 2)
+plt.plot(sp500_data['Date'], sp500_data['Returns'], label='Returns')
+plt.plot(sp500_data['Date'], sp500_data['VaR_10D_sp500'], label='VaR_10D_sp500')
+plt.scatter(sp500_data['Date'], sp500_data['realized_10D_return_sp500'], c=sp500_data['breaches_sp500'],  label='Breach')
+plt.title('S&P 500 LogReturn and VaR_10D with Breaches')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+nasdaq_breaches = nasdaq_data[nasdaq_data['breaches_nasdaq'] == True][['Date', 'Closing Price', 'Returns', 'VaR_10D_nasdaq']]
+sp500_breaches = sp500_data[sp500_data['breaches_sp500'] == True][['Date', 'Closing Price', 'Returns', 'VaR_10D_sp500']]
+
+
+nasdaq_breaches.head(), sp500_breaches.head()
